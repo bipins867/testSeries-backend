@@ -1,7 +1,7 @@
 import OpenAI from "openai";
 import { config } from "../config";
 import { withRetry } from "../utils/retry";
-import { parseJsonFromAI } from "../utils/jsonParser";
+import { parseJsonFromAI, extractArrayFromAI } from "../utils/jsonParser";
 import type {
   GeneratedQuestion,
   ValidationResult,
@@ -39,16 +39,18 @@ Rules:
 - Ensure factual accuracy — use only well-established, widely-accepted knowledge
 - Assign a confidence score (0 to 1) indicating how certain you are about the factual accuracy
 
-Return ONLY a valid JSON array (no extra text) in this exact format:
-[
-  {
-    "question": "The question text here",
-    "options": ["A) Option A text", "B) Option B text", "C) Option C text", "D) Option D text"],
-    "correctAnswer": "A",
-    "explanation": "Brief explanation of the correct answer",
-    "confidence": 0.95
-  }
-]`;
+Return a JSON object in this EXACT format:
+{
+  "questions": [
+    {
+      "question": "The question text here",
+      "options": ["A) Option A text", "B) Option B text", "C) Option C text", "D) Option D text"],
+      "correctAnswer": "A",
+      "explanation": "Brief explanation of the correct answer",
+      "confidence": 0.95
+    }
+  ]
+}`;
 
   return withRetry(async () => {
     console.log(
@@ -70,15 +72,10 @@ Return ONLY a valid JSON array (no extra text) in this exact format:
       throw new Error("Empty response from OpenAI during question generation");
     }
 
-    const parsed = parseJsonFromAI<
-      GeneratedQuestion[] | { questions: GeneratedQuestion[] }
-    >(content);
+    const questions = extractArrayFromAI<GeneratedQuestion>(content);
 
-    // Handle both { questions: [...] } and direct array formats
-    const questions = Array.isArray(parsed) ? parsed : parsed.questions;
-
-    if (!Array.isArray(questions) || questions.length === 0) {
-      throw new Error("AI returned an invalid or empty questions array");
+    if (questions.length === 0) {
+      throw new Error("AI returned an empty questions array");
     }
 
     console.log(`[OpenAI] Generated ${questions.length} questions`);
@@ -103,20 +100,21 @@ export async function validateQuestions(
 
 ${JSON.stringify(questions, null, 2)}
 
-For EACH question, check:
+For EACH of the ${questions.length} questions above, check:
 1. Is the stated correct answer actually correct?
 2. Is the question free from ambiguity — is there exactly one defensible answer?
 3. Are all stated facts accurate and not hallucinated?
 4. Are the distractor options plausible but clearly incorrect?
 
-Return ONLY a valid JSON array (no extra text) with one entry per question in order:
-[
-  {
-    "isValid": true,
-    "correctedAnswer": "A",
-    "issues": ""
-  }
-]
+IMPORTANT: You MUST return exactly ${questions.length} validation entries — one for each question, in the same order.
+
+Return a JSON object in this EXACT format:
+{
+  "validations": [
+    { "isValid": true, "correctedAnswer": "A", "issues": "" },
+    { "isValid": false, "correctedAnswer": "B", "issues": "The stated fact is incorrect..." }
+  ]
+}
 
 If a question is invalid, set isValid to false, provide the correctedAnswer if possible, and describe the issues.`;
 
@@ -138,15 +136,10 @@ If a question is invalid, set isValid to false, provide the correctedAnswer if p
       throw new Error("Empty response from OpenAI during validation");
     }
 
-    const parsed = parseJsonFromAI<
-      ValidationResult[] | { validations: ValidationResult[] }
-    >(content);
+    // Debug: log raw response structure to diagnose parsing issues
+    console.log(`[OpenAI] Validation raw response (first 500 chars): ${content.substring(0, 500)}`);
 
-    const results = Array.isArray(parsed) ? parsed : parsed.validations;
-
-    if (!Array.isArray(results)) {
-      throw new Error("Validation response is not an array");
-    }
+    const results = extractArrayFromAI<ValidationResult>(content);
 
     console.log(
       `[OpenAI] Validation complete — ${results.filter((r) => r.isValid).length}/${results.length} valid`
