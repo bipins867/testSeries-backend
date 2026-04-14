@@ -12,12 +12,7 @@ const app = express();
 
 // Middleware
 app.use(cors({
-  origin: "*",
-  credentials: true,
-  methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"],
-  allowedHeaders: ["Origin", "X-Requested-With", "Content-Type", "Accept", "Authorization"],
-  optionsSuccessStatus: 200
-}));
+  origin: "*"}));
 app.use(express.json({ limit: "1mb" }));
 
 // Request logging
