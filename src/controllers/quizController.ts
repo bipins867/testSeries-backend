@@ -16,6 +16,7 @@ const generateQuizSchema = z.object({
     .int("numberOfQuestions must be an integer")
     .min(1, "Must request at least 1 question")
     .max(20, "Maximum 20 questions per request"),
+  difficulty: z.enum(["Easy", "Medium", "Hard", "Mixed"]).optional().default("Mixed"),
 });
 
 const submitQuizSchema = z.object({
@@ -49,13 +50,13 @@ export async function handleGenerateQuiz(
       return;
     }
 
-    const { topic, numberOfQuestions } = parsed.data;
+    const { topic, numberOfQuestions, difficulty } = parsed.data;
 
     console.log(
-      `[Controller] POST /generate-quiz — topic: "${topic}", count: ${numberOfQuestions}`
+      `[Controller] POST /generate-quiz — topic: "${topic}", count: ${numberOfQuestions}, difficulty: ${difficulty}`
     );
 
-    const quiz = await createQuiz(topic, numberOfQuestions);
+    const quiz = await createQuiz(topic, numberOfQuestions, difficulty);
 
     res.status(200).json(quiz);
   } catch (err) {

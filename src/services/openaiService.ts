@@ -24,9 +24,15 @@ const openai = new OpenAI({ apiKey: config.openai.apiKey });
  */
 export async function generateQuestions(
   topic: string,
-  count: number
+  count: number,
+  difficulty: "Easy" | "Medium" | "Hard" | "Mixed" = "Mixed"
 ): Promise<GeneratedQuestion[]> {
   const systemPrompt = `You are an expert UPSC Civil Services Examination question setter with deep knowledge of Indian history, polity, geography, economy, science, and current affairs.`;
+
+  let difficultyInstruction = `- Assign a difficulty level ("Easy", "Medium", or "Hard") based on complexity`;
+  if (difficulty !== "Mixed") {
+    difficultyInstruction = `- Ensure all questions have a difficulty level of EXACTLY "${difficulty}"`;
+  }
 
   const userPrompt = `Generate exactly ${count} UPSC Prelims level MCQs on the topic: "${topic}".
 
@@ -37,6 +43,7 @@ Rules:
 - Include a concise explanation for the correct answer
 - Avoid ambiguous, controversial, or opinion-based facts
 - Ensure factual accuracy — use only well-established, widely-accepted knowledge
+${difficultyInstruction}
 - Assign a confidence score (0 to 1) indicating how certain you are about the factual accuracy
 
 Return a JSON object in this EXACT format:
@@ -47,6 +54,7 @@ Return a JSON object in this EXACT format:
       "options": ["A) Option A text", "B) Option B text", "C) Option C text", "D) Option D text"],
       "correctAnswer": "A",
       "explanation": "Brief explanation of the correct answer",
+      "difficulty": "Medium",
       "confidence": 0.95
     }
   ]
@@ -165,6 +173,7 @@ export async function analyzePerformance(
   const answerMap = new Map(answers.map((a) => [a.questionId, a.selected]));
 
   const breakdown = questions.map((q) => ({
+    questionId: q.id,
     question: q.question,
     correctAnswer: q.correctAnswer,
     userAnswer: answerMap.get(q.id) ?? "NOT_ANSWERED",
@@ -185,7 +194,10 @@ Provide a thorough analysis. Return ONLY valid JSON (no extra text):
   "strengths": ["specific strength 1", "specific strength 2"],
   "weaknesses": ["specific weakness 1", "specific weakness 2"],
   "summary": "A brief overall performance summary paragraph",
-  "suggestions": ["actionable suggestion 1", "actionable suggestion 2"]
+  "suggestions": ["actionable suggestion 1", "actionable suggestion 2"],
+  "questionFeedback": [
+    { "questionId": "ID-FROM-BREAKDOWN", "feedback": "Brief personalized feedback explaining why they got it right or wrong based on their answer." }
+  ]
 }`;
 
   return withRetry(async () => {
@@ -220,6 +232,9 @@ Provide a thorough analysis. Return ONLY valid JSON (no extra text):
           : "Analysis not available.",
       suggestions: Array.isArray(analysis.suggestions)
         ? analysis.suggestions
+        : [],
+      questionFeedback: Array.isArray(analysis.questionFeedback)
+        ? analysis.questionFeedback
         : [],
     };
   }, config.quiz.maxRetries);

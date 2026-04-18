@@ -8,6 +8,7 @@ export interface GeneratedQuestion {
   options: [string, string, string, string];
   correctAnswer: string;
   explanation: string;
+  difficulty: "Easy" | "Medium" | "Hard";
   confidence: number;
 }
 
@@ -23,6 +24,7 @@ export interface QuizQuestion {
   id: string;
   question: string;
   options: [string, string, string, string];
+  difficulty: "Easy" | "Medium" | "Hard";
 }
 
 /** Internal question record stored in memory (includes answer & meta). */
@@ -32,6 +34,7 @@ export interface StoredQuestion {
   options: [string, string, string, string];
   correctAnswer: string;
   explanation: string;
+  difficulty: "Easy" | "Medium" | "Hard";
 }
 
 /** Full quiz stored in the in-memory map. */
@@ -54,6 +57,7 @@ export interface QuizAnalysis {
   weaknesses: string[];
   summary: string;
   suggestions: string[];
+  questionFeedback: { questionId: string; feedback: string }[];
 }
 
 /** Response payload for POST /generate-quiz. */
@@ -62,9 +66,21 @@ export interface GenerateQuizResponse {
   questions: QuizQuestion[];
 }
 
+export interface DetailedQuestionResult {
+  id: string;
+  question: string;
+  options: [string, string, string, string];
+  correctAnswer: string;
+  userAnswer: string;
+  explanation: string;
+  isCorrect: boolean;
+  aiFeedback: string;
+}
+
 /** Response payload for POST /submit-quiz. */
 export interface SubmitQuizResponse {
   score: number;
   total: number;
   analysis: QuizAnalysis;
+  detailedResults: DetailedQuestionResult[];
 }

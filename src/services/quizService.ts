@@ -21,7 +21,8 @@ import type {
 
 export async function createQuiz(
   topic: string,
-  numberOfQuestions: number
+  numberOfQuestions: number,
+  difficulty: "Easy" | "Medium" | "Hard" | "Mixed" = "Mixed"
 ): Promise<GenerateQuizResponse> {
   // Request extra questions to account for validation filtering
   const requestCount = Math.min(
@@ -46,7 +47,7 @@ export async function createQuiz(
     );
 
     // Step 1: Generate
-    const rawQuestions = await generateQuestions(topic, toRequest);
+    const rawQuestions = await generateQuestions(topic, toRequest, difficulty);
 
     // Step 2: Validate (anti-hallucination)
     const validations = await validateQuestions(rawQuestions);
@@ -64,6 +65,7 @@ export async function createQuiz(
       options: q.options,
       correctAnswer: q.correctAnswer,
       explanation: q.explanation,
+      difficulty: q.difficulty || "Medium",
     }));
 
     validQuestions = [...validQuestions, ...mapped];
@@ -100,6 +102,7 @@ export async function createQuiz(
       id: q.id,
       question: q.question,
       options: q.options,
+      difficulty: q.difficulty,
     })),
   };
 
@@ -145,11 +148,35 @@ export async function submitQuiz(
     total
   );
 
+  // Build detailed results
+  const feedbackMap = new Map(
+    analysis.questionFeedback?.map((f) => [f.questionId, f.feedback]) || []
+  );
+
+  const detailedResults = quiz.questions.map((q) => {
+    const userAnswer = answerMap.get(q.id) || "NOT_ANSWERED";
+    const isCorrect = userAnswer === q.correctAnswer;
+    const aiFeedback =
+      feedbackMap.get(q.id) ||
+      (isCorrect ? "Good job!" : "Review the explanation carefully.");
+
+    return {
+      id: q.id,
+      question: q.question,
+      options: q.options,
+      correctAnswer: q.correctAnswer,
+      userAnswer,
+      explanation: q.explanation,
+      isCorrect,
+      aiFeedback,
+    };
+  });
+
   console.log(
     `[QuizService] Quiz ${quizId} submitted — Score: ${score}/${total}`
   );
 
-  return { score, total, analysis };
+  return { score, total, analysis, detailedResults };
 }
 
 // ──────────────────────────────────────────────
