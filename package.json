@@ -1,27 +1,40 @@
 {
   "name": "upsc-quiz-backend",
-  "version": "1.0.0",
-  "description": "AI-powered UPSC quiz system with anti-hallucination validation",
-  "main": "dist/index.js",
+  "version": "2.0.0",
+  "description": "Industry-grade UPSC quiz system with persistent question bank, auth, and AI cost optimization",
+  "main": "dist/server.js",
   "scripts": {
-    "dev": "ts-node-dev --respawn --transpile-only src/index.ts",
+    "dev": "ts-node-dev --respawn --transpile-only src/server.ts",
     "build": "tsc",
-    "start": "node dist/index.js",
+    "start": "node dist/server.js",
     "lint": "eslint src/**/*.ts"
   },
   "dependencies": {
-    "cors": "^2.8.5",
-    "dotenv": "^16.4.7",
-    "express": "^4.21.2",
-    "openai": "^4.85.4",
+    "bcryptjs": "^3.0.3",
+    "cors": "^2.8.6",
+    "dotenv": "^16.6.1",
+    "express": "^4.22.1",
+    "express-rate-limit": "^8.3.2",
+    "helmet": "^8.1.0",
+    "jsonwebtoken": "^9.0.3",
+    "morgan": "^1.10.1",
+    "mysql2": "^3.22.1",
+    "openai": "^4.104.0",
+    "sequelize": "^6.37.8",
     "uuid": "^11.1.0",
-    "zod": "^3.24.2"
+    "winston": "^3.19.0",
+    "zod": "^3.25.76"
   },
   "devDependencies": {
+    "@types/bcryptjs": "^2.4.6",
     "@types/cors": "^2.8.17",
     "@types/express": "^5.0.0",
+    "@types/express-rate-limit": "^5.1.3",
+    "@types/jsonwebtoken": "^9.0.10",
+    "@types/morgan": "^1.9.10",
     "@types/node": "^22.13.10",
     "@types/uuid": "^10.0.0",
+    "sequelize-cli": "^6.6.5",
     "ts-node-dev": "^2.0.0",
     "typescript": "^5.8.2"
   }
