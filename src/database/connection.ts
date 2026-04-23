@@ -32,10 +32,12 @@ export async function connectDatabase(): Promise<void> {
     await sequelize.authenticate();
     logger.info("✅ Database connection established successfully.");
 
-    // Sync all models (alter in development, do nothing in production — use migrations)
     if (!config.isProduction) {
       await sequelize.sync({ alter: true });
-      logger.info("✅ Database models synchronized.");
+      logger.info("✅ Database models synchronized (alter: true).");
+    } else {
+      await sequelize.sync();
+      logger.info("✅ Database models synchronized for production (create missing only).");
     }
   } catch (error) {
     logger.error("❌ Unable to connect to the database:", error);
