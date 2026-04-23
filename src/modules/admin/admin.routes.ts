@@ -5,6 +5,7 @@ import { ROLES } from '../../common/constants';
 import { AdminUsersController } from './admin-users.controller';
 import { AdminQuestionsController } from './admin-questions.controller';
 import { AdminAnalyticsController } from './admin-analytics.controller';
+import { AdminDashboardController } from './admin-dashboard.controller';
 import { CatalogService } from '../catalog/catalog.service';
 import { ApiResponse } from '../../common/responses/ApiResponse';
 
@@ -20,6 +21,8 @@ router.use(authorize(ROLES.ADMIN, ROLES.SUPER_ADMIN));
 
 // ─── Users ─────────────────────────────────
 router.get('/users', (req, res, next) => usersCtrl.listUsers(req, res, next));
+router.get('/users/:id', (req, res, next) => AdminDashboardController.getUserDetail(req, res, next));
+router.get('/users/:id/quiz-history', (req, res, next) => AdminDashboardController.getUserQuizHistory(req, res, next));
 router.patch('/users/:id', (req, res, next) => usersCtrl.updateUser(req, res, next));
 
 // ─── Questions ─────────────────────────────────
@@ -68,6 +71,9 @@ router.patch('/topics/:id', async (req, res, next) => {
 
 // ─── Analytics ─────────────────────────────────
 router.get('/analytics/overview', (req, res, next) => analyticsCtrl.getOverview(req, res, next));
+router.get('/analytics/dashboard', (req, res, next) => AdminDashboardController.getDashboard(req, res, next));
+router.get('/analytics/activity-trends', (req, res, next) => AdminDashboardController.getActivityTrends(req, res, next));
+router.get('/analytics/exam-stats', (req, res, next) => AdminDashboardController.getExamStats(req, res, next));
 router.get('/analytics/ai-usage', (req, res, next) => analyticsCtrl.getAiUsage(req, res, next));
 router.get('/analytics/popular-topics', (req, res, next) => analyticsCtrl.getPopularTopics(req, res, next));
 router.get('/audit-logs', (req, res, next) => analyticsCtrl.getAuditLogs(req, res, next));

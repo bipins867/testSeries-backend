@@ -2,6 +2,7 @@
  * Model registry — imports all models and defines associations.
  * Import this file once at app startup to register everything with Sequelize.
  */
+import { sequelize } from '../connection';
 import { Role } from './Role';
 import { User } from './User';
 import { Exam } from './Exam';
@@ -80,6 +81,7 @@ AdminAuditLog.belongsTo(User, { foreignKey: 'admin_id', as: 'admin' });
 // ─── Exports ──────────────────────────────────────────
 
 export {
+  sequelize,
   Role,
   User,
   Exam,

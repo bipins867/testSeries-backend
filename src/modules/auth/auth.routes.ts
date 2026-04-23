@@ -18,6 +18,8 @@ const controller = new AuthController();
 router.post('/register', authLimiter, validate(registerSchema), (req, res, next) => controller.register(req, res, next));
 router.post('/login', authLimiter, validate(loginSchema), (req, res, next) => controller.login(req, res, next));
 router.post('/refresh-token', validate(refreshTokenSchema), (req, res, next) => controller.refreshToken(req, res, next));
+router.post('/forgot-password', authLimiter, (req, res, next) => controller.forgotPassword(req, res, next));
+router.post('/reset-password', authLimiter, (req, res, next) => controller.resetPassword(req, res, next));
 
 // Protected routes
 router.post('/logout', authenticate, (req, res, next) => controller.logout(req, res, next));

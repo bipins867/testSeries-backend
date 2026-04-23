@@ -75,4 +75,32 @@ export class AuthController {
       next(err);
     }
   }
+
+  /**
+   * POST /auth/forgot-password
+   * Sends a dummy OTP (1234) — simulates email delivery
+   */
+  async forgotPassword(req: Request, res: Response, next: NextFunction) {
+    try {
+      const { email } = req.body;
+      await authService.forgotPassword(email);
+      return ApiResponse.success(res, null, 'OTP sent to your email address');
+    } catch (err) {
+      next(err);
+    }
+  }
+
+  /**
+   * POST /auth/reset-password
+   * Verifies OTP and resets the password
+   */
+  async resetPassword(req: Request, res: Response, next: NextFunction) {
+    try {
+      const { email, otp, new_password } = req.body;
+      await authService.resetPassword(email, otp, new_password);
+      return ApiResponse.success(res, null, 'Password reset successful');
+    } catch (err) {
+      next(err);
+    }
+  }
 }

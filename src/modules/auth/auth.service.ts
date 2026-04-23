@@ -6,6 +6,8 @@ import { ConflictError, UnauthorizedError, BadRequestError, NotFoundError } from
 import { ROLES } from '../../common/constants';
 import { AuthRepository } from './auth.repository';
 import { JwtPayload } from '../../common/middleware/authenticate';
+import { User } from '../../database/models';
+import { logger } from '../../common/logger';
 
 const authRepository = new AuthRepository();
 
@@ -197,6 +199,66 @@ export class AuthService {
     await authRepository.updateUser(userId, { password_hash: newHash });
   }
 
+  /**
+   * Forgot password — simulates sending OTP.
+   * In production, this would send an email. For now, OTP is always 1234.
+   */
+  async forgotPassword(email: string): Promise<void> {
+    const user = await authRepository.findUserByEmail(email);
+    if (!user) {
+      // Don't reveal whether email exists — silently succeed
+      return;
+    }
+
+    // Store dummy OTP in password_reset_token field, set 10 min expiry
+    const otp = '1234'; // Constant dummy OTP — will be dynamic later
+    const expiresAt = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
+
+    await User.update(
+      {
+        password_reset_token: otp,
+        password_reset_expires: expiresAt,
+      },
+      { where: { id: user.id } },
+    );
+
+    // In production: send email with OTP
+    logger.info(`[DUMMY EMAIL] OTP for ${email}: ${otp}`);
+  }
+
+  /**
+   * Reset password using OTP verification.
+   */
+  async resetPassword(email: string, otp: string, newPassword: string): Promise<void> {
+    const user = await User.scope('full').findOne({ where: { email } });
+    if (!user) {
+      throw new BadRequestError('Invalid email or OTP');
+    }
+
+    // Verify OTP
+    if (
+      !user.password_reset_token ||
+      user.password_reset_token !== otp ||
+      !user.password_reset_expires ||
+      new Date(user.password_reset_expires) < new Date()
+    ) {
+      throw new BadRequestError('Invalid or expired OTP');
+    }
+
+    // Hash new password and clear reset fields
+    const hashedPassword = await bcrypt.hash(newPassword, 12);
+    await User.update(
+      {
+        password_hash: hashedPassword,
+        password_reset_token: null,
+        password_reset_expires: null,
+      },
+      { where: { id: user.id } },
+    );
+
+    logger.info(`Password reset successful for ${email}`);
+  }
+
   // ─── Private helpers ──────────────────────────────────
 
   private generateTokens(payload: JwtPayload) {
@@ -225,3 +287,4 @@ export class AuthService {
     };
   }
 }
+
